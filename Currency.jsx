@@ -1,66 +1,85 @@
-import React from 'react'
-import './Currency.css'
+import React, { useState, useEffect } from 'react';
+import './Currency.css';
 
-const Currency = () => { const currencyUrl = "https://open.er-api.com/v6/latest/";
-    const flagUrl = "https://countryflagsapi.com/png/";
+const Currency = () => {
+  const currencyUrl = "https://open.er-api.com/v6/latest/";
+  const flagUrl = "https://countryflagsapi.com/png/";
 
-    async function populateCurrencies() {
-        const response = await fetch(currencyUrl + "USD");
-        const data = await response.json();
-        const currencies = Object.keys(data.rates);
+  const [currencies, setCurrencies] = useState([]);
+  const [amount, setAmount] = useState(1);
+  const [fromCurrency, setFromCurrency] = useState("USD");
+  const [toCurrency, setToCurrency] = useState("EUR");
+  const [result, setResult] = useState("");
+  const [flag, setFlag] = useState("");
 
-        let options = "";
-        currencies.forEach(currency => {
-            options += `<option value="${currency}">${currency}</option>`;
-        });
+  useEffect(() => {
+    const fetchCurrencies = async () => {
+      const response = await fetch(currencyUrl + "USD");
+      const data = await response.json();
+      setCurrencies(Object.keys(data.rates));
+    };
+    fetchCurrencies();
+  }, []);
 
-        document.getElementById('fromCurrency').innerHTML = options;
-        document.getElementById('toCurrency').innerHTML = options;
-    }
+  const convertCurrency = async () => {
+    if (!amount || !fromCurrency || !toCurrency) return;
 
-    async function convertCurrency() {
-        const amount = document.getElementById('amount').value;
-        const fromCurrency = document.getElementById('fromCurrency').value;
-        const toCurrency = document.getElementById('toCurrency').value;
+    const response = await fetch(currencyUrl + fromCurrency);
+    const data = await response.json();
+    const rate = data.rates[toCurrency];
+    const convertedAmount = (amount * rate).toFixed(2);
 
-        const response = await fetch(currencyUrl + fromCurrency);
-        const data = await response.json();
-        const rate = data.rates[toCurrency];
-        const result = amount * rate;
+    setResult(`${amount} ${fromCurrency} = ${convertedAmount} ${toCurrency}`);
 
-        document.getElementById('result').innerText = `${amount} ${fromCurrency} = ${result.toFixed(2)} ${toCurrency}`;
-
-        const flagCode = toCurrency.slice(0, 2).toLowerCase();
-        document.getElementById('flag').src = flagUrl + flagCode;
-        
-    }
-
-    window.onload = populateCurrencies;
+    const flagCode = toCurrency.slice(0, 2).toLowerCase();
+    setFlag(flagUrl + flagCode);
+  };
 
   return (
-    
-       <div class="container">
-            <h2>Currency Exchanger</h2>
-            <label for="amount">Amount:</label>
-            <input type="number" id="amount" placeholder="Enter amount" />
-    
-            <label for="fromCurrency">From Currency:</label>
-            <select id="fromCurrency"></select>
-    
-            <label for="toCurrency">To Currency:</label>
-            <select id="toCurrency"></select>
-    
-            <button onclick="convertCurrency()">Convert</button>
-    
-            <h3 id="result"></h3>
+    <div className="container">
+      <h2>Currency Exchanger</h2>
+
+      <label htmlFor="amount">Amount:</label>
+      <input
+        type="number"
+        id="amount"
+        value={amount}
+        onChange={(e) => setAmount(e.target.value)}
+        placeholder="Enter amount"
+      />
+
+      <label htmlFor="fromCurrency">From Currency:</label>
+      <select
+        id="fromCurrency"
+        value={fromCurrency}
+        onChange={(e) => setFromCurrency(e.target.value)}
+      >
+        {currencies.map((currency) => (
+          <option key={currency} value={currency}>
+            {currency}
+          </option>
+        ))}
+      </select>
+
+      <label htmlFor="toCurrency">To Currency:</label>
+      <select
+        id="toCurrency"
+        value={toCurrency}
+        onChange={(e) => setToCurrency(e.target.value)}
+      >
+        {currencies.map((currency) => (
+          <option key={currency} value={currency}>
+            {currency}
+          </option>
+        ))}
+      </select>
+
+      <button onClick={convertCurrency}>Convert</button>
+
+      <h3>{result}</h3>
+      {flag && <img id="flag" src={flag} alt="Country Flag" />}
     </div>
-  )
-}
+  );
+};
 
-export default Currency
-    
-    
-    
-   
-
-       
+export default Currency;
